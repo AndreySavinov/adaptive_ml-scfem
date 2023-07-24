@@ -348,7 +348,7 @@ while tot_err_direct >= delta && iter <= adaptmax
 end
 
 endLoopTime = toc(startLoopTime);
-
+%%
 % plot error estimates
 figure(98);
 loglog(dof, error_iter, 'o-k', dof, error_d_iter, 's-b')
