@@ -18,7 +18,7 @@
 % Copyright (c) 2018 A. Bespalov, L. Rocchi
 
 % File name
-  filename = 'sl_sc_test.dat';
+  filename = 'sl_sc_test2CC.dat';
 
 % Create data structure
   data = [(1:iter)', ...
@@ -26,7 +26,10 @@
           (error_d_iter(1:iter))',                  ...
           (err_s_d_iter(1:iter))',                  ...
           (err_p_d_iter(1:iter))',                  ...
-          (eff_ind_d_iter(1:iter))'];
+          (error_iter(1:iter))',                  ...
+          (err_s_iter(1:iter))',                  ...
+          (err_p_iter(1:iter))'];                
+          %(eff_ind_d_iter(1:iter))'];
       
 % Open file
   fid = fopen(filename,'w');
