@@ -18,7 +18,7 @@
 % Copyright (c) 2018 A. Bespalov, L. Rocchi
 
 % File name
-  filename = 'sl_sc_test2CC.dat';
+  filename = 'sl_sc_test1CC.dat';
 
 % Create data structure
   data = [(1:iter)', ...

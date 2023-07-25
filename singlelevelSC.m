@@ -8,9 +8,9 @@
 clear all; close all;
 stochcol_testproblems;
 stochcol_adaptive_global_settingsP1;
-if sn ~= 3 
+if sn ~= 3 && sn ~= 11
    delta = default('set the error tolerance (default is 6e-3)',6e-3);
-else %sn == 3
+else %sn == 3 || sn == 11
    delta = default('set the error tolerance (default is 1e-1)',1e-1);
 end
 adaptmax = default('set the number of adaptive steps (default is 40)',40);
@@ -363,6 +363,7 @@ loglog(dof, error_d_iter, 'o-k', dof, err_s_d_iter, 's-b', dof, err_p_d_iter, 'd
 hold on
 grid on
 xlabel('degrees of freedom')
+
 ylabel('estimated error')
 legend('$\eta$ (total)', '$\mu$ (spatial)', '$\tau$ (parametric)', ...
        'Location', 'Best','interpreter','latex')
