@@ -1,16 +1,29 @@
-function KL_coeff = stochcol_diffusion_coeff_spatial_expansion(x1, x2, yy, input)
+function a = stochcol_diffusion_coeff_spatial_expansion(x1, x2, yy, input)
     M = input(1);
-    alpha_bar = input(2);
-    sigma_tilde = input(3);
-    KL_coeff = ones(size(x1)); % a_0
+    a = 1.1*ones(size(x1)); % a_0
+    gap_size = 0.1;
+    cookie_size = (1 - 4*gap_size)/3; 
     for m = 1:M
-        km = floor(-0.5e0+sqrt(0.25e0+2*m));
-        beta_x1 = m -km*(km + 1)/2;
-        beta_x2 = km -beta_x1;
+        % Set a_m
         if m == 1
-            KL_coeff = KL_coeff + 0.498/(m^(sigma_tilde))*cos(2*pi*beta_x1*x1).*cos(2*pi*beta_x2*x2)*yy(m);
-        else   
-            KL_coeff = KL_coeff + alpha_bar/(m^(sigma_tilde))*cos(2*pi*beta_x1*x1).*cos(2*pi*beta_x2*x2)*yy(m);
+            a_m = 1.0*(x1<=cookie_size+gap_size).*(x1>=gap_size).*(x2<=cookie_size+gap_size).*(x2>=gap_size);
+        elseif m == 2
+            a_m = 0.8*(x1<=2*(cookie_size+gap_size)).*(x1>=cookie_size+2*gap_size).*(x2<=cookie_size+gap_size).*(x2>=gap_size);
+        elseif m == 3
+            a_m = 0.4*(x1<=3*(cookie_size+gap_size)).*(x1>=2*cookie_size+3*gap_size).*(x2<=cookie_size+gap_size).*(x2>=gap_size);
+        elseif m == 4
+            a_m = 0.2*(x1<=cookie_size+gap_size).*(x1>=gap_size).*(x2<=2*(cookie_size+gap_size)).*(x2>=cookie_size+2*gap_size);
+        elseif m == 5
+            a_m = 0.1*(x1<=3*(cookie_size+gap_size)).*(x1>=2*cookie_size+3*gap_size).*(x2<=2*(cookie_size+gap_size)).*(x2>=cookie_size+2*gap_size);
+        elseif m == 6
+            a_m = 0.05*(x1<=cookie_size+gap_size).*(x1>=gap_size).*(x2<=3*(cookie_size+gap_size)).*(x2>=2*cookie_size+3*gap_size);
+        elseif m == 7
+            a_m = 0.02*(x1<=2*(cookie_size+gap_size)).*(x1>=cookie_size+2*gap_size).*(x2<=3*(cookie_size+gap_size)).*(x2>=2*cookie_size+3*gap_size);
+        elseif m == 8
+            a_m = 0.01*(x1<=3*(cookie_size+gap_size)).*(x1>=2*cookie_size+3*gap_size).*(x2<=3*(cookie_size+gap_size)).*(x2>=2*cookie_size+3*gap_size);
+        else
+            a_m = 0;
         end
+        a = a + a_m * yy(m);
     end
 end

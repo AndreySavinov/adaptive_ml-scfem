@@ -17,6 +17,8 @@ adaptmax = default('set the number of adaptive steps (default is 40)',40);
 cpointsmax = 7;
 tot_err_est = Inf;
 tot_err_direct = Inf;
+serrest = Inf;
+perrest_d = Inf;
 
 % preallocation of arrays
     dof = nan(1,adaptmax);
@@ -35,7 +37,7 @@ tot_err_direct = Inf;
     
 iter = 0; glevel = 0;
 startLoopTime = tic;
-while tot_err_direct >= delta && iter <= adaptmax
+while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= delta
     if iter == 0 % First iteration step
         % Initial index set is for a single collocation point
         X = stochcol_getindexset(0, M);
@@ -282,7 +284,7 @@ while tot_err_direct >= delta && iter <= adaptmax
     % [Mset, ~] = dorfler_marking(X_diff, perrests, pmthreshold);
  
     % total error indicator
-    tot_err_est = serrest + perrest;
+    % tot_err_est = serrest + perrest;
                            
     % compute direct estimates of error
     % spatial
@@ -315,7 +317,9 @@ while tot_err_direct >= delta && iter <= adaptmax
         perrest_d(index_counter) = sqrt(sum(dot(G_diff, sols_all' * A_unit * sols_all)));
     end
     [Mset, ~] = dorfler_marking(X_diff, perrest_d, pmthreshold);
-
+    
+    % total error indicator
+    tot_err_est = serrest + sum(perrest_d);
     tot_err_direct = serrest_d + sum(perrest_d);
                              
     % output error estimates
@@ -370,7 +374,7 @@ legend('$\eta$ (total)', '$\mu$ (spatial)', '$\tau$ (parametric)', ...
 axis tight
 %
 figure(100);
-loglog(dof, error_iter, 'o-k', dof, err_s_iter, 's-b', dof, err_p_iter, 'd-r')
+loglog(dof, error_iter, 'o-k', dof, err_s_iter, 's-b', dof, err_p_d_iter, 'd-r')
 hold on
 grid on
 xlabel('degrees of freedom')
