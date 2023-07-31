@@ -17,8 +17,6 @@ adaptmax = default('set the number of adaptive steps (default is 40)',40);
 cpointsmax = 7;
 tot_err_est = Inf;
 tot_err_direct = Inf;
-serrest = Inf;
-perrest_d = Inf;
 
 % preallocation of arrays
     dof = nan(1,adaptmax);
@@ -37,7 +35,7 @@ perrest_d = Inf;
     
 iter = 0; glevel = 0;
 startLoopTime = tic;
-while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= delta
+while tot_err_direct >= delta && iter <= adaptmax 
     if iter == 0 % First iteration step
         % Initial index set is for a single collocation point
         X = stochcol_getindexset(0, M);
@@ -120,8 +118,8 @@ while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= del
         fprintf(['   spatial error indicator', ...
          ' is %10.4e \n'], serrest)
         fprintf(['parametric error indicator', ...
-         ' is %10.4e \n'], sum(perrest_d))
-        if serrest < sum(perrest_d) %serrest < perrest % serrest_d < perrest_d
+         ' is %10.4e \n'], perrest)
+        if serrest < perrest % serrest_d < perrest_d
             fprintf('Parametric refinement ... new indices added \n');
             glevel = glevel+1;
             % Refined index set
@@ -276,10 +274,10 @@ while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= del
     end
     
     % indexwise parametric error estimates based on the detail collocation nodes
-    perrests = stochcol_est_parametric(X_diff, errest2s, ...
-        gridd_diff, list, rule_id);
+    % perrests = stochcol_est_parametric(X_diff, errest2s, ...
+    %    gridd_diff, list, rule_id);
     % parametric error indicator
-    perrest = sum(perrests);
+    % perrest = sum(perrests);
     % marked index set from the detail index set
     % [Mset, ~] = dorfler_marking(X_diff, perrests, pmthreshold);
  
@@ -292,7 +290,7 @@ while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= del
         paras_sg, paras_fem, list, pmethod, rhs, aa);
     % parametric
     % !!!!!!!!!!
-    perrest_d = zeros(size(X_diff, 1), 1);
+    perrests = zeros(size(X_diff, 1), 1);
     for index_counter = 1:size(X_diff, 1) 
         paras_sg_diff = stochcol_sg(X_diff(index_counter, :), rule_id);
         G_diff = stochcol_gmatrices(paras_sg_diff{4}, ...
@@ -314,20 +312,41 @@ while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= del
             elseif ncptsf < ncpts, error('Oops ..  fatal logic issue'),
             end
         % compute the energy norm of the SG solution via hierarchical surplus
-        perrest_d(index_counter) = sqrt(sum(dot(G_diff, sols_all' * A_unit * sols_all)));
+        perrests(index_counter) = sqrt(sum(dot(G_diff, sols_all' * A_unit * sols_all)));
     end
-    [Mset, ~] = dorfler_marking(X_diff, perrest_d, pmthreshold);
+    [Mset, ~] = dorfler_marking(X_diff, perrests, pmthreshold);
+    perrest = sum(perrests);
+    
+    %parametric direct error estimates
+        paras_sg_diff = stochcol_sg(X_diff, rule_id);
+        G_diff = stochcol_gmatrices(paras_sg_diff{4}, ...
+                paras_sg_diff{5},paras_sg_diff{6}, list);
+        ncpts = length(G_diff(:,1));
+        ncptsf = size(coords, 1)+ size(coords_diff, 1);
+        grid_old_ind = setdiff([1:ncptsf]',grid_diff_ind);
+        % construct array containing all the cpoint solution vectors
+        sols_all = nan(length(paras_fem{1}), ncptsf);
+        sols_all(:,grid_old_ind) = sols; sols_all(:,grid_diff_ind) = sols_diff;
+            if ncptsf > ncpts   
+                [gdiff,indx]=setdiff(paras_sg_full{4}, paras_sg_diff{4}, 'rows');
+            %        gdiff
+                iactive=setdiff([1:ncptsf]',indx);
+                sols_all=sols_all(:,iactive);
+            elseif ncptsf < ncpts, error('Oops ..  fatal logic issue'),
+            end
+        % compute the energy norm of the SG solution via hierarchical surplus
+        perrest_d = sqrt(sum(dot(G_diff, sols_all' * A_unit * sols_all)));
     
     % total error indicator
-    tot_err_est = serrest + sum(perrest_d);
-    tot_err_direct = serrest_d + sum(perrest_d);
+    tot_err_est = serrest + perrest;
+    tot_err_direct = serrest_d + perrest_d;
                              
     % output error estimates
     if iter==0, fprintf('\n\nIteration %i \n',iter), end
     fprintf(['   spatial error estimate', ...
              ' is %10.4e  vs  %10.4e (spatial indicator)\n'], serrest_d, serrest)
     fprintf(['parametric error estimate', ...
-             ' is %10.4e  vs  %10.4e (parametric indicator)\n'], sum(perrest_d), perrest)
+             ' is %10.4e  vs  %10.4e (parametric indicator)\n'], perrest_d, perrest)
     fprintf(['overall estimate from indicators', ...
              ' is %10.4e'], tot_err_est)
     fprintf(['\n   overall direct error estimate', ...
@@ -340,7 +359,7 @@ while serrest + sum(perrest_d)>=delta && iter <= adaptmax %tot_err_direct >= del
     err_s_iter(iter) = serrest;
     error_iter(iter) = tot_err_est;
     
-    err_p_d_iter(iter) = sum(perrest_d);
+    err_p_d_iter(iter) = perrest_d;
     err_s_d_iter(iter) = serrest_d;
     error_d_iter(iter) = tot_err_direct;
 
@@ -374,7 +393,7 @@ legend('$\eta$ (total)', '$\mu$ (spatial)', '$\tau$ (parametric)', ...
 axis tight
 %
 figure(100);
-loglog(dof, error_iter, 'o-k', dof, err_s_iter, 's-b', dof, err_p_d_iter, 'd-r')
+loglog(dof, error_iter, 'o-k', dof, err_s_iter, 's-b', dof, err_p_iter, 'd-r')
 hold on
 grid on
 xlabel('degrees of freedom')
